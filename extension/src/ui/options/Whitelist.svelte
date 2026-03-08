@@ -56,8 +56,10 @@
 
     async function onEditKeydown(ev: KeyboardEvent) {
         key: switch (ev.key) {
-            // Finish editing on enter
+            // Finish editing on enter, stopping propagation so we don't
+            // immediately begin editing again.
             case "Enter":
+                ev.stopPropagation();
                 finishEditing();
                 break;
 
@@ -145,10 +147,20 @@
                         bind:checked={item.isEnabled}
                     />
                 {/if}
-
                 <div
                     class="whitelist__title"
                     on:dblclick={() => beginEditing(i)}
+                    on:keydown={ev => {
+                        switch (ev.key) {
+                            case "Enter":
+                            case " ":
+                                ev.preventDefault();
+                                beginEditing(i);
+                                break;
+                        }
+                    }}
+                    role="button"
+                    tabindex="0"
                 >
                     {#if isEditingItem}
                         <input

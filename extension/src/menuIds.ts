@@ -1,30 +1,21 @@
-export const POPUP_CAST = "popupCastMenuId";
-export const POPUP_STOP = "popupStopMenuId";
-
-export const POPUP_MEDIA_SEPARATOR = "popupMediaSeparatorMenuId";
-export const POPUP_MEDIA_PLAY_PAUSE = "popupMediaPlayPauseMenuId";
-export const POPUP_MEDIA_MUTE = "popupMediaMuteMenuId";
-export const POPUP_MEDIA_SKIP_PREVIOUS = "popupMediaSkipPreviousMenuId";
-export const POPUP_MEDIA_SKIP_NEXT = "popupMediaSkipNextMenuId";
-export const POPUP_MEDIA_CC = "popupMediaSubtitlesCaptionsMenuId";
-export const POPUP_MEDIA_CC_OFF = "popupMediaSubtitlesCaptionsOffMenuId";
-
-export const receiverMenuIds = [
-    POPUP_CAST,
-    POPUP_STOP,
-    POPUP_MEDIA_SEPARATOR,
-    POPUP_MEDIA_PLAY_PAUSE,
-    POPUP_MEDIA_MUTE,
-    POPUP_MEDIA_SKIP_PREVIOUS,
-    POPUP_MEDIA_SKIP_NEXT,
-    POPUP_MEDIA_CC
-];
-
-export const mediaMenuIds = [
-    POPUP_MEDIA_SEPARATOR,
-    POPUP_MEDIA_PLAY_PAUSE,
-    POPUP_MEDIA_MUTE,
-    POPUP_MEDIA_SKIP_PREVIOUS,
-    POPUP_MEDIA_SKIP_NEXT,
-    POPUP_MEDIA_CC
-];
+export enum MenuId {
+    Cast = "cast",
+    CastMedia = "cast_media",
+    Whitelist = "whitelist",
+    WhitelistRecommended = "whitelist_recommended",
+    WhitelistSeparator = "whitelist_separator",
+    WhitelistSearch = "whitelist_search",
+    WhitelistPath = "whitelist_path",
+    WhitelistWildcardProtocol = "whitelist_wildcard_protocol",
+    WhitelistWildcardSubdomain = "whitelist_wildcard_subdomain",
+    WhitelistWildcardProtocolAndSubdomain = "whitelist_wildcard_protocol_and_subdomain",
+    PopupCast = "popup_cast",
+    PopupStop = "popup_stop",
+    PopupMediaSeparator = "popup_media_separator",
+    PopupMediaPlayPause = "popup_media_play_pause",
+    PopupMediaMute = "popup_media_mute",
+    PopupMediaSkipPrevious = "popup_media_skip_previous",
+    PopupMediaSkipNext = "popup_media_skip_next",
+    PopupMediaCaptions = "popup_media_captions",
+    PopupMediaCaptionsOff = "popup_media_captions_off"
+}

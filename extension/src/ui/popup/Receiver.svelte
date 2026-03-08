@@ -4,10 +4,13 @@
 
     import type { Options } from "../../lib/options";
 
-    import { type ReceiverDevice, ReceiverDeviceCapabilities } from "../../types";
+    import {
+        type ReceiverDevice,
+        ReceiverDeviceCapabilities
+    } from "../../types";
     import type { Port } from "../../messaging";
 
-    import * as menuIds from "../../menuIds";
+    import { MenuId } from "../../menuIds";
 
     import type { Volume } from "../../cast/sdk/classes";
     import { PlayerState, TrackType } from "../../cast/sdk/media/enums";
@@ -169,7 +172,7 @@
 
         lastMenuShownDeviceId = device.id;
 
-        browser.menus.update(menuIds.POPUP_CAST, {
+        browser.menus.update(MenuId.PopupCast, {
             visible: true,
             title: _("popupCastMenuTitle", device.friendlyName),
             enabled:
@@ -181,7 +184,7 @@
                 isAnyMediaTypeAvailable
         });
 
-        browser.menus.update(menuIds.POPUP_STOP, {
+        browser.menus.update(MenuId.PopupStop, {
             visible: !!application && !application.isIdleScreen,
             title: application?.displayName
                 ? _("popupStopMenuTitle", [
@@ -234,10 +237,10 @@
         if (!isTarget(info)) return;
 
         switch (info.menuItemId) {
-            case menuIds.POPUP_MEDIA_PLAY_PAUSE:
+            case MenuId.PopupMediaPlayPause:
                 handleMediaPlayPause();
                 break;
-            case menuIds.POPUP_MEDIA_MUTE:
+            case MenuId.PopupMediaMute:
                 if (
                     !device.status?.volume.muted &&
                     device.status?.volume.level === 0
@@ -247,24 +250,24 @@
                     handleVolumeChange({ muted: !device.status?.volume.muted });
                 }
                 break;
-            case menuIds.POPUP_MEDIA_SKIP_PREVIOUS:
+            case MenuId.PopupMediaSkipPrevious:
                 handleMediaSkipPrevious();
                 break;
-            case menuIds.POPUP_MEDIA_SKIP_NEXT:
+            case MenuId.PopupMediaSkipNext:
                 handleMediaSkipNext();
                 break;
 
-            case menuIds.POPUP_CAST:
+            case MenuId.PopupCast:
                 isConnecting = true;
                 dispatch("cast", { device });
                 break;
-            case menuIds.POPUP_STOP:
+            case MenuId.PopupStop:
                 dispatch("stop", { device });
                 break;
         }
 
         // Handle caption submenu items
-        if (info.parentMenuItemId === menuIds.POPUP_MEDIA_CC) {
+        if (info.parentMenuItemId === MenuId.PopupMediaCaptions) {
             // Filter and append active track IDs array
             if (!mediaStatus?.activeTrackIds) return;
             const activeTrackIds = mediaStatus.activeTrackIds.filter(
@@ -283,6 +286,15 @@
     function onContextMenu() {
         browser.menus.overrideContext({ showDefaults: false });
     }
+
+    const mediaMenuIds = [
+        MenuId.PopupMediaSeparator,
+        MenuId.PopupMediaPlayPause,
+        MenuId.PopupMediaMute,
+        MenuId.PopupMediaSkipPrevious,
+        MenuId.PopupMediaSkipNext,
+        MenuId.PopupMediaCaptions
+    ];
 
     /** Updates media menu items from media status. */
     function updateMediaMenus(shownMenuIds: (number | string)[] = []) {
@@ -306,19 +318,18 @@
 
         // Hide all media menu items if no media status
         if (!mediaStatus) {
-            for (const menuId of menuIds.mediaMenuIds) {
+            for (const menuId of mediaMenuIds)
                 browser.menus.update(menuId, { visible: false });
-            }
             return;
         }
 
-        browser.menus.update(menuIds.POPUP_MEDIA_SEPARATOR, {
+        browser.menus.update(MenuId.PopupMediaSeparator, {
             visible: true
         });
 
         // Play/pause menu item
         if (mediaStatus.supportedMediaCommands & _MediaCommand.PAUSE) {
-            browser.menus.update(menuIds.POPUP_MEDIA_PLAY_PAUSE, {
+            browser.menus.update(MenuId.PopupMediaPlayPause, {
                 visible: true,
                 title:
                     mediaStatus.playerState === PlayerState.PLAYING ||
@@ -330,7 +341,7 @@
                     mediaStatus.playerState === PlayerState.PAUSED
             });
         } else {
-            browser.menus.update(menuIds.POPUP_MEDIA_PLAY_PAUSE, {
+            browser.menus.update(MenuId.PopupMediaPlayPause, {
                 visible: false
             });
         }
@@ -339,24 +350,24 @@
         if (device.status?.volume) {
             const volume = device.status.volume;
 
-            browser.menus.update(menuIds.POPUP_MEDIA_MUTE, {
+            browser.menus.update(MenuId.PopupMediaMute, {
                 visible: true,
                 title: _("popupMediaMute"),
                 checked: volume.muted || volume.level === 0,
                 enabled: "muted" in volume
             });
         } else {
-            browser.menus.update(menuIds.POPUP_MEDIA_MUTE, {
+            browser.menus.update(MenuId.PopupMediaMute, {
                 visible: false
             });
         }
 
-        browser.menus.update(menuIds.POPUP_MEDIA_SKIP_PREVIOUS, {
+        browser.menus.update(MenuId.PopupMediaSkipPrevious, {
             visible: !!(
                 mediaStatus.supportedMediaCommands & _MediaCommand.QUEUE_PREV
             )
         });
-        browser.menus.update(menuIds.POPUP_MEDIA_SKIP_NEXT, {
+        browser.menus.update(MenuId.PopupMediaSkipNext, {
             visible: !!(
                 mediaStatus.supportedMediaCommands & _MediaCommand.QUEUE_NEXT
             )
@@ -367,8 +378,8 @@
             textTracks?.length &&
             mediaStatus.supportedMediaCommands & _MediaCommand.EDIT_TRACKS
         ) {
-            browser.menus.update(menuIds.POPUP_MEDIA_CC, { visible: true });
-            browser.menus.update(menuIds.POPUP_MEDIA_CC_OFF, {
+            browser.menus.update(MenuId.PopupMediaCaptions, { visible: true });
+            browser.menus.update(MenuId.PopupMediaCaptionsOff, {
                 visible: true,
                 checked: activeTextTrackId === undefined
             });
@@ -377,7 +388,7 @@
                 const menuId = browser.menus.create({
                     id: `subtitle-${track.trackId}`,
                     title: track.name ?? track.trackId.toString(),
-                    parentId: menuIds.POPUP_MEDIA_CC,
+                    parentId: MenuId.PopupMediaCaptions,
                     type: "radio",
                     checked: track.trackId === activeTextTrackId
                 });
@@ -385,7 +396,7 @@
                 captionSubmenus.set(menuId, track.trackId);
             }
         } else {
-            browser.menus.update(menuIds.POPUP_MEDIA_CC, {
+            browser.menus.update(MenuId.PopupMediaCaptions, {
                 visible: false
             });
         }

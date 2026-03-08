@@ -7,26 +7,6 @@ export function getNextEllipsis(ellipsis: string): string {
     return "";
 }
 
-/**
- * Template literal tag function, JSON-encodes substitutions.
- */
-export function stringify(
-    templateStrings: TemplateStringsArray,
-    ...substitutions: unknown[]
-) {
-    let formattedString = "";
-
-    for (const templateString of templateStrings) {
-        if (formattedString) {
-            formattedString += JSON.stringify(substitutions.shift());
-        }
-
-        formattedString += templateString;
-    }
-
-    return formattedString;
-}
-
 export function loadScript(
     scriptUrl: string,
     doc: Document = document

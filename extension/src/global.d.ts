@@ -81,20 +81,3 @@ declare namespace browser.events {
         removeListener(...args: any[]): void | Promise<void>;
     }
 }
-
-declare namespace browser.runtime {
-    interface Port {
-        error?: { message: string };
-
-        /**
-         * https://git.io/fjmzb
-         * addListener cb `() => void` is wrong
-         */
-        onMessage: browser.events.Event;
-    }
-
-    function connect(connectInfo: {
-        name?: string;
-        includeTlsChannelId?: boolean;
-    }): browser.runtime.Port;
-}

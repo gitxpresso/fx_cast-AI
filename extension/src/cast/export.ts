@@ -17,7 +17,6 @@ let existingInstance = new CastSDK();
 export default existingInstance;
 
 interface EnsureInitOpts {
-    contextTabId?: number;
     /** Skip receiver selection. */
     receiverDevice?: ReceiverDevice;
 }
@@ -32,7 +31,7 @@ interface EnsureInitOpts {
  * provides a messaging port so consumers of this module can communicate
  * with the cast manager.
  */
-export function ensureInit(opts: EnsureInitOpts): Promise<CastPort> {
+export function ensureInit(opts?: EnsureInitOpts): Promise<CastPort> {
     return new Promise(async (resolve, reject) => {
         // If already initialized
         if (existingPort) {
@@ -40,101 +39,39 @@ export function ensureInit(opts: EnsureInitOpts): Promise<CastPort> {
             existingInstance = new CastSDK();
         }
 
-        /**
-         * If imported into a background script context, the location
-         * will be the internal extension URL, whereas in a content
-         * script, it will be the content page URL.
-         */
-        if (
-            window.location.protocol === "moz-extension:" &&
-            window.location.pathname === "_generated_background_page.html"
-        ) {
-            const { default: castManager } = await import(
-                "../background/castManager"
-            );
+        const managerPort = messaging.connect({ name: "trusted-cast" });
 
-            /**
-             * port1 will handle cast manager messages.
-             * port2 will handle cast instance messages.
-             */
-            const { port1: managerPort, port2: instancePort } =
-                new MessageChannel();
-
-            /**
-             * Provide cast manager with a port to send messages to
-             * cast instance.
-             */
-            if (opts.contextTabId) {
-                await castManager.createInstance(instancePort, {
-                    tabId: opts.contextTabId,
-                    frameId: 0
-                });
-            } else {
-                await castManager.createInstance(instancePort);
+        // Cast manager -> cast instance
+        managerPort.onMessage.addListener(message => {
+            if (message.subject === "cast:instanceCreated") {
+                if (message.data.isAvailable) {
+                    resolve(pageMessaging.page.messagePort);
+                } else {
+                    reject();
+                }
             }
 
-            // cast manager -> cast instance
-            managerPort.addEventListener("message", ev => {
-                const message = ev.data as Message;
-                if (message.subject === "cast:instanceCreated") {
-                    if (message.data.isAvailable) {
-                        resolve(existingPort);
-                    } else {
-                        reject();
-                    }
-                }
+            pageMessaging.extension.sendMessage(message);
+        });
 
-                pageMessaging.extension.sendMessage(message);
-            });
-            managerPort.start();
+        // Cast instance -> cast manager
+        pageMessaging.extension.addListener(message => {
+            // Skip receiver selection
+            if (opts?.receiverDevice) {
+                message = rewriteTrustedRequestSession(
+                    message,
+                    opts.receiverDevice
+                );
+            }
 
-            // Cast instance -> cast manager
-            pageMessaging.extension.addListener(message => {
-                // Skip receiver selection
-                if (opts.receiverDevice) {
-                    message = rewriteTrustedRequestSession(
-                        message,
-                        opts.receiverDevice
-                    );
-                }
+            managerPort.postMessage(message);
+        });
 
-                managerPort.postMessage(message);
-            });
-        } else {
-            const managerPort = messaging.connect({ name: "trusted-cast" });
+        managerPort.onDisconnect.addListener(() => {
+            pageMessaging.extension.close();
+        });
 
-            // Cast manager -> cast instance
-            managerPort.onMessage.addListener(message => {
-                if (message.subject === "cast:instanceCreated") {
-                    if (message.data.isAvailable) {
-                        resolve(pageMessaging.page.messagePort);
-                    } else {
-                        reject();
-                    }
-                }
-
-                pageMessaging.extension.sendMessage(message);
-            });
-
-            // Cast instance -> cast manager
-            pageMessaging.extension.addListener(message => {
-                // Skip receiver selection
-                if (opts.receiverDevice) {
-                    message = rewriteTrustedRequestSession(
-                        message,
-                        opts.receiverDevice
-                    );
-                }
-
-                managerPort.postMessage(message);
-            });
-
-            managerPort.onDisconnect.addListener(() => {
-                pageMessaging.extension.close();
-            });
-
-            existingPort = pageMessaging.page.messagePort;
-        }
+        existingPort = pageMessaging.page.messagePort;
     });
 }
 

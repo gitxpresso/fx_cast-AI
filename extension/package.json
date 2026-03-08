@@ -8,7 +8,7 @@
         "lint": "eslint src --ext .ts,.tsx"
     },
     "devDependencies": {
-        "@types/firefox-webext-browser": "^94.0.1",
+        "@types/firefox-webext-browser": "^143.0.0",
         "@types/semver": "^7.3.9",
         "@types/uuid": "^8.3.4",
         "esbuild": "^0.25.0",

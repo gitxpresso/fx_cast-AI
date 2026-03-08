@@ -23,7 +23,13 @@ if (document.currentScript) {
     );
 
     if (currentScriptParams.get("loadCastFramework") === "1") {
-        frameworkScriptPromise = loadScript(CAST_FRAMEWORK_SCRIPT_URL);
+        frameworkScriptPromise = new Promise((resolve, reject) => {
+            const scriptEl = document.createElement("script");
+            scriptEl.src = CAST_FRAMEWORK_SCRIPT_URL;
+            (document.head ?? document.documentElement).append(scriptEl);
+            scriptEl.addEventListener("load", () => resolve(scriptEl));
+            scriptEl.addEventListener("error", () => reject());
+        });
         frameworkScriptPromise.catch(() => {
             logger.error("Failed to load CAF script!");
         });

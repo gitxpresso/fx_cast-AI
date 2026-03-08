@@ -10,6 +10,7 @@
 body {
     background: var(--box-background) !important;
     color: var(--box-color) !important;
+    font-family: system-ui;
     font-size: 13px;
     overflow-y: hidden;
     padding: 20px 10px;
@@ -417,7 +418,7 @@ fieldset:disabled .option__description {
 }
 
 .whitelist__input-pattern {
-    font: inherit;
+    font-family: monospace;
     width: -moz-available;
 }
 

@@ -7,14 +7,14 @@
         "url": "https://matt.tf/"
     },
 
-    "applications": {
+    "browser_specific_settings": {
         "gecko": {
             "id": "fx_cast@matt.tf",
-            "strict_min_version": "64.0",
+            "strict_min_version": "109.0",
             "update_url": "https://hensm.github.io/fx_cast/updates.json"
         }
     },
-    "browser_action": {
+    "action": {
         "theme_icons": [
             {
                 "light": "icons/cast-default-light.svg",
@@ -35,7 +35,7 @@
         "96": "icons/icon.svg"
     },
 
-    "manifest_version": 2,
+    "manifest_version": 3,
 
     "options_ui": {
         "page": "ui/options/index.html"
@@ -46,12 +46,18 @@
         "menus.overrideContext",
         "nativeMessaging",
         "notifications",
+        "scripting",
         "storage",
         "tabs",
         "webNavigation",
         "webRequest",
-        "webRequestBlocking",
-        "<all_urls>"
+        "webRequestBlocking"
     ],
-    "web_accessible_resources": ["cast/content.js"]
+    "host_permissions": ["<all_urls>"],
+    "web_accessible_resources": [
+        {
+            "resources": ["cast/content.js"],
+            "matches": ["<all_urls>"]
+        }
+    ]
 }

@@ -6,7 +6,7 @@
     import options, { type Options } from "../../lib/options";
     import { RemoteMatchPattern } from "../../lib/matchPattern";
 
-    import { receiverMenuIds } from "../../menuIds";
+    import { MenuId } from "../../menuIds";
 
     import {
         type ReceiverDevice,
@@ -274,6 +274,17 @@
     /** Device ID associated with the last receiver menu that was shown. */
     let lastMenuShownDeviceId: string;
 
+    const receiverMenuIds = [
+        MenuId.PopupCast,
+        MenuId.PopupStop,
+        MenuId.PopupMediaSeparator,
+        MenuId.PopupMediaPlayPause,
+        MenuId.PopupMediaMute,
+        MenuId.PopupMediaSkipPrevious,
+        MenuId.PopupMediaSkipNext,
+        MenuId.PopupMediaCaptions
+    ];
+
     /** Handle show events for receiver context menus. */
     function onMenuShown(info: browser.menus._OnShownInfo) {
         // Only handle menu events on this page
@@ -287,10 +298,8 @@
 
         const receiverElement = targetElement.closest(".receiver");
         if (!receiverElement) {
-            for (const menuId of receiverMenuIds) {
+            for (const menuId of receiverMenuIds)
                 browser.menus.update(menuId, { visible: false });
-            }
-
             browser.menus.refresh();
         }
     }

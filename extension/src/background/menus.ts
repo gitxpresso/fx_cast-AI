@@ -1,8 +1,8 @@
 import logger from "../lib/logger";
 import options from "../lib/options";
-import { stringify } from "../lib/utils";
 
 import * as menuIds from "../menuIds";
+import { MenuId } from "../menuIds";
 
 import castManager from "./castManager";
 
@@ -15,32 +15,30 @@ const URL_PATTERN_FILE = "file://*/*";
 const URL_PATTERNS_REMOTE = [URL_PATTERN_HTTP, URL_PATTERN_HTTPS];
 const URL_PATTERNS_ALL = [...URL_PATTERNS_REMOTE, URL_PATTERN_FILE];
 
-type MenuId = string | number;
-
-let menuIdCast: MenuId;
-let menuIdCastMedia: MenuId;
-let menuIdWhitelist: MenuId;
-let menuIdWhitelistRecommended: MenuId;
-
 /** Match patterns for the whitelist option menus. */
-const whitelistChildMenuPatterns = new Map<MenuId, string>();
+const whitelistChildMenuPatterns = new Map<string | number, string>();
 
 /** Handles initial menu setup. */
 export async function initMenus() {
     logger.info("init (menus)");
 
+    // Clear any existing menus from a previous event page load
+    await browser.menus.removeAll();
+
     const opts = await options.getAll();
 
     // Global "Cast..." menu item
-    menuIdCast = browser.menus.create({
-        contexts: ["browser_action", "page", "tools_menu"],
+    browser.menus.create({
+        id: MenuId.Cast,
+        contexts: ["action", "page", "tools_menu"],
         title: _("contextCast"),
         documentUrlPatterns: ["http://*/*", "https://*/*"],
-        icons: { "16": "icons/icon.svg" } // browser_action context
+        icons: { "16": "icons/icon.svg" }
     });
 
     // <video>/<audio> "Cast..." context menu item
-    menuIdCastMedia = browser.menus.create({
+    browser.menus.create({
+        id: MenuId.CastMedia,
         contexts: ["audio", "video", "image"],
         title: _("contextCast"),
         visible: opts.mediaEnabled,
@@ -49,67 +47,81 @@ export async function initMenus() {
             : URL_PATTERNS_REMOTE
     });
 
-    menuIdWhitelist = browser.menus.create({
-        contexts: ["browser_action"],
+    // Whitelist menu parent item
+    browser.menus.create({
+        id: MenuId.Whitelist,
+        contexts: ["action"],
         title: _("contextAddToWhitelist"),
         enabled: false
     });
-
-    menuIdWhitelistRecommended = browser.menus.create({
+    // Top item in the whitelist submenu, which is the recommended pattern based
+    // on the current page URL and is always present.
+    browser.menus.create({
+        id: MenuId.WhitelistRecommended,
         title: _("contextAddToWhitelistRecommended"),
-        parentId: menuIdWhitelist
+        parentId: MenuId.Whitelist
     });
+    // Separator between recommended and advanced patterns
+    browser.menus.create({
+        id: MenuId.WhitelistSeparator,
+        type: "separator",
+        parentId: MenuId.Whitelist
+    });
+
+    const popupMenuProps = {
+        visible: false,
+        documentUrlPatterns: [`${browser.runtime.getURL("ui/popup")}/*`]
+    } satisfies browser.menus._CreateCreateProperties;
 
     browser.menus.create({
-        type: "separator",
-        parentId: menuIdWhitelist
-    });
-
-    // Popup context menus
-    const createPopupMenu = (props: browser.menus._CreateCreateProperties) =>
-        browser.menus.create({
-            visible: false,
-            documentUrlPatterns: [`${browser.runtime.getURL("ui/popup")}/*`],
-            ...props
-        });
-
-    createPopupMenu({
-        id: menuIds.POPUP_MEDIA_PLAY_PAUSE,
+        ...popupMenuProps,
+        id: MenuId.PopupMediaPlayPause,
         title: _("popupMediaPlay")
     });
-    createPopupMenu({
-        id: menuIds.POPUP_MEDIA_MUTE,
+    browser.menus.create({
+        ...popupMenuProps,
+        id: MenuId.PopupMediaMute,
         type: "checkbox",
         title: _("popupMediaMute")
     });
-    createPopupMenu({
-        id: menuIds.POPUP_MEDIA_SKIP_PREVIOUS,
+    browser.menus.create({
+        ...popupMenuProps,
+        id: MenuId.PopupMediaSkipPrevious,
         title: _("popupMediaSkipPrevious")
     });
-    createPopupMenu({
-        id: menuIds.POPUP_MEDIA_SKIP_NEXT,
+    browser.menus.create({
+        ...popupMenuProps,
+        id: MenuId.PopupMediaSkipNext,
         title: _("popupMediaSkipNext")
     });
-    createPopupMenu({
-        id: menuIds.POPUP_MEDIA_CC,
+    browser.menus.create({
+        ...popupMenuProps,
+        id: MenuId.PopupMediaCaptions,
         title: _("popupMediaSubtitlesCaptions")
     });
-    createPopupMenu({
-        id: menuIds.POPUP_MEDIA_CC_OFF,
-        parentId: menuIds.POPUP_MEDIA_CC,
+    browser.menus.create({
+        ...popupMenuProps,
+        id: MenuId.PopupMediaCaptionsOff,
+        parentId: MenuId.PopupMediaCaptions,
         type: "radio",
         title: _("popupMediaSubtitlesCaptionsOff")
     });
 
-    createPopupMenu({ id: menuIds.POPUP_MEDIA_SEPARATOR, type: "separator" });
+    browser.menus.create({
+        ...popupMenuProps,
+        id: MenuId.PopupMediaSeparator,
+        type: "separator"
+    });
 
-    createPopupMenu({
-        id: menuIds.POPUP_CAST,
+    browser.menus.create({
+        ...popupMenuProps,
+        id: MenuId.PopupCast,
         title: _("popupCastButtonTitle"),
         icons: { 16: "icons/icon.svg" }
     });
-    createPopupMenu({
-        id: menuIds.POPUP_STOP,
+    browser.menus.create({
+        ...popupMenuProps,
+        id: MenuId.PopupStop,
         title: _("popupStopButtonTitle")
     });
 
@@ -120,14 +132,13 @@ export async function initMenus() {
         const alteredOpts = ev.detail;
         const newOpts = await options.getAll();
 
-        if (menuIdCastMedia && alteredOpts.includes("mediaEnabled")) {
-            browser.menus.update(menuIdCastMedia, {
+        if (MenuId.CastMedia && alteredOpts.includes("mediaEnabled")) {
+            browser.menus.update(MenuId.CastMedia, {
                 visible: newOpts.mediaEnabled
             });
         }
-
-        if (menuIdCastMedia && alteredOpts.includes("localMediaEnabled")) {
-            browser.menus.update(menuIdCastMedia, {
+        if (MenuId.CastMedia && alteredOpts.includes("localMediaEnabled")) {
+            browser.menus.update(MenuId.CastMedia, {
                 targetUrlPatterns: newOpts.localMediaEnabled
                     ? URL_PATTERNS_ALL
                     : URL_PATTERNS_REMOTE
@@ -138,10 +149,8 @@ export async function initMenus() {
 
 /** Handle updating menus when shown. */
 async function onMenuShown(info: browser.menus._OnShownInfo) {
-    const menuIds = info.menuIds as unknown as number[];
-
     // Only rebuild menus if whitelist menu present
-    if (menuIds.includes(menuIdWhitelist as number)) {
+    if (info.menuIds.includes(MenuId.Whitelist)) {
         updateWhitelistMenu(info.pageUrl);
         return;
     }
@@ -153,51 +162,51 @@ async function onMenuClicked(
     tab?: browser.tabs.Tab
 ) {
     // Handle whitelist menus
-    if (info.parentMenuItemId === menuIdWhitelist) {
+    if (info.parentMenuItemId === MenuId.Whitelist) {
         const pattern = whitelistChildMenuPatterns.get(info.menuItemId);
         if (!pattern) {
             throw logger.error(
                 `Whitelist pattern not found for menu item ID ${info.menuItemId}.`
             );
         }
-
         const whitelist = await options.get("siteWhitelist");
         if (!whitelist.find(item => item.pattern === pattern)) {
             // Add to whitelist and update options
             whitelist.push({ pattern, isEnabled: true });
             await options.set("siteWhitelist", whitelist);
         }
-
         return;
     }
 
-    if (tab?.id === undefined) {
-        logger.error("Menu handler tab ID not found.");
-        return;
-    }
-
-    switch (info.menuItemId) {
-        case menuIdCast: {
-            castManager.triggerCast(tab.id, info.frameId);
-            break;
-        }
-
-        case menuIdCastMedia:
-            if (info.srcUrl) {
-                await browser.tabs.executeScript(tab.id, {
-                    code: stringify`
-                            window.mediaUrl = ${info.srcUrl};
-                            window.targetElementId = ${info.targetElementId};
-                        `,
-                    frameId: info.frameId
-                });
-
-                await browser.tabs.executeScript(tab.id, {
-                    file: "cast/senders/media.js",
-                    frameId: info.frameId
-                });
+    if (tab?.id !== undefined) {
+        switch (info.menuItemId) {
+            case MenuId.Cast: {
+                castManager.triggerCast(tab.id, info.frameId);
+                break;
             }
-            break;
+
+            case MenuId.CastMedia: {
+                if (info.srcUrl) {
+                    const frameIds = info.frameId ? [info.frameId] : undefined;
+                    await browser.scripting.executeScript({
+                        target: { tabId: tab.id, frameIds },
+                        func: (
+                            mediaUrl: string,
+                            targetElementId: number | undefined
+                        ) => {
+                            (window as any).mediaUrl = mediaUrl;
+                            (window as any).targetElementId = targetElementId;
+                        },
+                        args: [info.srcUrl, info.targetElementId]
+                    });
+                    await browser.scripting.executeScript({
+                        target: { tabId: tab.id, frameIds },
+                        files: ["cast/senders/media.js"]
+                    });
+                }
+                break;
+            }
+        }
     }
 }
 
@@ -208,7 +217,7 @@ async function updateWhitelistMenu(pageUrl?: string) {
      * to whitelist, so disable the menu and return.
      */
     if (!pageUrl) {
-        browser.menus.update(menuIdWhitelist, {
+        browser.menus.update(MenuId.Whitelist, {
             enabled: false
         });
 
@@ -225,7 +234,7 @@ async function updateWhitelistMenu(pageUrl?: string) {
      * menu and return.
      */
     if (!urlHasOrigin) {
-        browser.menus.update(menuIdWhitelist, {
+        browser.menus.update(MenuId.Whitelist, {
             enabled: false
         });
 
@@ -234,15 +243,14 @@ async function updateWhitelistMenu(pageUrl?: string) {
     }
 
     // Enable the whitelist menu
-    browser.menus.update(menuIdWhitelist, {
+    browser.menus.update(MenuId.Whitelist, {
         enabled: true
     });
 
     for (const [menuId] of whitelistChildMenuPatterns) {
         // Clear all page-specific temporary menus
-        if (menuId !== menuIdWhitelistRecommended) {
+        if (menuId !== MenuId.WhitelistRecommended)
             browser.menus.remove(menuId);
-        }
 
         whitelistChildMenuPatterns.delete(menuId);
     }
@@ -262,22 +270,23 @@ async function updateWhitelistMenu(pageUrl?: string) {
     const patternWildcardProtocolAndSubdomain = `*://*.${baseDomain}/*`;
 
     // Update recommended menu item
-    browser.menus.update(menuIdWhitelistRecommended, {
+    browser.menus.update(MenuId.WhitelistRecommended, {
         title: _("contextAddToWhitelistRecommended", patternRecommended)
     });
-
     whitelistChildMenuPatterns.set(
-        menuIdWhitelistRecommended,
+        MenuId.WhitelistRecommended,
         patternRecommended
     );
 
     if (url.search) {
-        const whitelistSearchMenuId = browser.menus.create({
-            title: _("contextAddToWhitelistAdvancedAdd", patternSearch),
-            parentId: menuIdWhitelist
-        });
-
-        whitelistChildMenuPatterns.set(whitelistSearchMenuId, patternSearch);
+        whitelistChildMenuPatterns.set(
+            browser.menus.create({
+                id: MenuId.WhitelistSearch,
+                title: _("contextAddToWhitelistAdvancedAdd", patternSearch),
+                parentId: MenuId.Whitelist
+            }),
+            patternSearch
+        );
     }
 
     /**
@@ -300,9 +309,11 @@ async function updateWhitelistMenu(pageUrl?: string) {
 
                 const pattern = `${portlessOrigin}/${partialPath}/*`;
 
-                const partialPathMenuId = browser.menus.create({
+                const partialPathMenuId = `${MenuId.WhitelistPath}-${i}`;
+                browser.menus.create({
+                    id: partialPathMenuId,
                     title: _("contextAddToWhitelistAdvancedAdd", pattern),
-                    parentId: menuIdWhitelist
+                    parentId: MenuId.Whitelist
                 });
 
                 whitelistChildMenuPatterns.set(partialPathMenuId, pattern);
@@ -310,36 +321,38 @@ async function updateWhitelistMenu(pageUrl?: string) {
         }
     }
 
-    const wildcardProtocolMenuId = browser.menus.create({
-        title: _("contextAddToWhitelistAdvancedAdd", patternWildcardProtocol),
-        parentId: menuIdWhitelist
-    });
-
     whitelistChildMenuPatterns.set(
-        wildcardProtocolMenuId,
+        browser.menus.create({
+            id: MenuId.WhitelistWildcardProtocol,
+            title: _(
+                "contextAddToWhitelistAdvancedAdd",
+                patternWildcardProtocol
+            ),
+            parentId: MenuId.Whitelist
+        }),
         patternWildcardProtocol
     );
 
-    const wildcardSubdomainMenuId = browser.menus.create({
-        title: _("contextAddToWhitelistAdvancedAdd", patternWildcardSubdomain),
-        parentId: menuIdWhitelist
-    });
-
     whitelistChildMenuPatterns.set(
-        wildcardSubdomainMenuId,
+        browser.menus.create({
+            id: MenuId.WhitelistWildcardSubdomain,
+            title: _(
+                "contextAddToWhitelistAdvancedAdd",
+                patternWildcardSubdomain
+            ),
+            parentId: MenuId.Whitelist
+        }),
         patternWildcardSubdomain
     );
-
-    const wildcardProtocolAndSubdomainMenuId = browser.menus.create({
-        title: _(
-            "contextAddToWhitelistAdvancedAdd",
-            patternWildcardProtocolAndSubdomain
-        ),
-        parentId: menuIdWhitelist
-    });
-
     whitelistChildMenuPatterns.set(
-        wildcardProtocolAndSubdomainMenuId,
+        browser.menus.create({
+            id: MenuId.WhitelistWildcardProtocolAndSubdomain,
+            title: _(
+                "contextAddToWhitelistAdvancedAdd",
+                patternWildcardProtocolAndSubdomain
+            ),
+            parentId: MenuId.Whitelist
+        }),
         patternWildcardProtocolAndSubdomain
     );
 

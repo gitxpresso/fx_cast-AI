@@ -14,7 +14,6 @@ const logger = new Logger("fx_cast [media sender]");
 
 interface MediaSenderOpts {
     mediaUrl: string;
-    contextTabId?: number;
     mediaElement?: HTMLMediaElement;
 }
 
@@ -22,7 +21,6 @@ export default class MediaSender {
     private port?: CastPort;
 
     private mediaUrl: string;
-    private contextTabId?: number;
 
     /** Target media element if loaded as a content script. */
     private mediaElement?: HTMLMediaElement;
@@ -38,7 +36,6 @@ export default class MediaSender {
 
     constructor(opts: MediaSenderOpts) {
         this.mediaUrl = opts.mediaUrl;
-        this.contextTabId = opts.contextTabId;
         this.mediaElement = opts.mediaElement;
 
         this.init();
@@ -51,7 +48,7 @@ export default class MediaSender {
 
     private async init() {
         try {
-            this.port = await ensureInit({ contextTabId: this.contextTabId });
+            this.port = await ensureInit();
         } catch (err) {
             logger.error("Failed to initialize cast API", err);
         }

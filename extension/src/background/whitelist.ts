@@ -194,20 +194,19 @@ async function onBeforeCastSDKRequest(details: OnBeforeRequestDetails) {
         }
     }
 
-    await browser.tabs.executeScript(details.tabId, {
-        code: `
-            window.isFramework = ${
-                details.url === CAST_FRAMEWORK_LOADER_SCRIPT_URL
-            };
-        `,
-        frameId: details.frameId,
-        runAt: "document_start"
+    await browser.scripting.executeScript({
+        target: { tabId: details.tabId, frameIds: [details.frameId] },
+        func: (isFramework: boolean) => {
+            (window as any).isFramework = isFramework;
+        },
+        args: [details.url === CAST_FRAMEWORK_LOADER_SCRIPT_URL],
+        injectImmediately: true
     });
 
-    await browser.tabs.executeScript(details.tabId, {
-        file: "cast/contentBridge.js",
-        frameId: details.frameId,
-        runAt: "document_start"
+    await browser.scripting.executeScript({
+        target: { tabId: details.tabId, frameIds: [details.frameId] },
+        files: ["cast/contentBridge.js"],
+        injectImmediately: true
     });
 
     return {
@@ -255,15 +254,23 @@ async function registerSiteWhitelist() {
         ["blocking", "requestHeaders"]
     );
 
-    browser.contentScripts.register({
-        matches: siteWhitelist.map(item => item.pattern),
-        js: [{ file: "cast/contentInitial.js" }],
-        runAt: "document_start",
-        allFrames: true
-    });
+    try {
+        await browser.scripting.unregisterContentScripts({
+            ids: ["whitelist-content"]
+        });
+    } catch {}
+    await browser.scripting.registerContentScripts([
+        {
+            id: "whitelist-content",
+            matches: siteWhitelist.map(item => item.pattern),
+            js: ["cast/contentInitial.js"],
+            runAt: "document_start",
+            allFrames: true
+        }
+    ]);
 }
 
-function unregisterSiteWhitelist() {
+async function unregisterSiteWhitelist() {
     browser.webRequest.onBeforeSendHeaders.removeListener(
         onWhitelistedBeforeSendHeaders
     );
@@ -271,4 +278,9 @@ function unregisterSiteWhitelist() {
         onWhitelistedChildBeforeSendHeaders
     );
     browser.webRequest.onBeforeRequest.removeListener(onBeforeCastSDKRequest);
+    try {
+        await browser.scripting.unregisterContentScripts({
+            ids: ["whitelist-content"]
+        });
+    } catch {}
 }

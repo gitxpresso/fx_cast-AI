@@ -40,8 +40,8 @@ export function updateActionState(state: ActionState, tabId?: number) {
             break;
     }
 
-    browser.browserAction.setTitle({ tabId, title });
-    browser.browserAction.setIcon({ tabId, path });
+    browser.action.setTitle({ tabId, title });
+    browser.action.setIcon({ tabId, path });
 }
 
 export function initAction() {
@@ -49,7 +49,7 @@ export function initAction() {
 
     updateActionState(ActionState.Default);
 
-    browser.browserAction.onClicked.addListener(async tab => {
+    browser.action.onClicked.addListener(async tab => {
         if (tab.id === undefined) {
             logger.error("Tab ID not found in browser action handler.");
             return;

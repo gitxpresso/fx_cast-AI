@@ -64,16 +64,20 @@ export default class Remote extends CastClient {
         if (!application || application.isIdleScreen) {
             // Handle app close
             if (this.transportClient) {
+                this.transportClient.disconnect();
                 this.transportClient = undefined;
                 this.options?.onApplicationClose?.();
             }
+
+            this.options?.onReceiverStatusUpdate?.(message.status);
+            return;
         }
 
         // Update status before possible transport init
         this.options?.onReceiverStatusUpdate?.(message.status);
 
         // Handle app creation/discovery
-        if (application && !this.transportClient) {
+        if (!this.transportClient) {
             this.transportClient = new RemoteTransport(
                 application.transportId,
                 message => this.onMediaMessage(message)

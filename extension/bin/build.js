@@ -55,7 +55,7 @@ const outPath = argv.package ? unpackedPath : distPath;
 /** @type esbuild.BuildOptions */
 const buildOpts = {
     bundle: true,
-    target: "firefox64",
+    target: "firefox109",
     logLevel: "info",
     sourcemap: "inline",
 
@@ -113,10 +113,13 @@ const buildOpts = {
                         })
                     );
 
-                    manifest.content_security_policy =
-                        argv.mode === "production"
-                            ? "script-src 'self'; object-src 'self'"
-                            : "script-src 'self' 'unsafe-eval'; object-src 'self'";
+                    // In development, allow eval for source maps
+                    if (argv.mode !== "production") {
+                        manifest.content_security_policy = {
+                            extension_pages:
+                                "script-src 'self' 'unsafe-eval'; object-src 'self'"
+                        };
+                    }
 
                     fs.writeFileSync(
                         `${outPath}/manifest.json`,

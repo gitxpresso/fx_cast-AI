@@ -1,3 +1,6 @@
+> [!CAUTION]
+> No longer in active development and the next (0.4.x) release is shelved indefinitely due to Mozilla extension review policies and the signing requirement for release builds that make it infeasible to practically continue. The extension will likely no longer be installable in the near future due to these policies. You can still build it from source and sideload it on Firefox ESR, Developer Edition and Nightly. 
+
 <img src="docs/images/preview.png"
      alt="Preview of cast device selection popup"
      align="right"

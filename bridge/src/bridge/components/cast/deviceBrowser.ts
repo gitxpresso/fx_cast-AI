@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { DnsSdBrowser } from "../../../dns_sd";
+import { DnsSdBrowser } from "../../../dns_sd/index";
 import type { ReceiverDevice } from "../../messagingTypes";
 
 /**

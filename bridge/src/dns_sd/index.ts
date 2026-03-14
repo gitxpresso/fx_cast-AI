@@ -1,6 +1,20 @@
+import path from "path";
 import { EventEmitter } from "events";
 
-const native = require("bindings")("dns_sd");
+let native: any;
+if ((process as any).pkg) {
+    // Seems to be some breaking change with the way bindings paths are resolved
+    // in @yao-pkg/pkg, so use `process.dlopen` directly when running in a pkg
+    // bundle.
+    native = { exports: {} } as any;
+    process.dlopen(
+        native,
+        path.join(path.dirname(process.execPath), "dns_sd.node")
+    );
+    native = native.exports;
+} else {
+    native = require("bindings")("dns_sd");
+}
 
 export interface Service {
     /** Service instance name */

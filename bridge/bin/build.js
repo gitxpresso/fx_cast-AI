@@ -35,7 +35,7 @@ const argv = await yargs()
     })
     .option("node-version", {
         describe: "Node.js version to target",
-        default: "16"
+        default: "22"
     })
     .conflicts("use-pkg", "package")
     .parse(process.argv);
@@ -111,7 +111,7 @@ async function build() {
                  * Workaround for pkg asset detection
                  * https://github.com/thibauts/node-castv2/issues/46
                  */
-                assets: "../../node_modules/castv2/lib/cast_channel.proto"
+                assets: "../../../node_modules/castv2/lib/cast_channel.proto"
             }
         };
 

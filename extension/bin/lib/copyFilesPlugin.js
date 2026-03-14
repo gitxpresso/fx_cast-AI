@@ -49,26 +49,8 @@ export default opts => {
     return {
         name: "copy-files",
         setup(build) {
-            /** First run for the set of import paths in each build. */
-            let isFirstRun = true;
-            build.onResolve({ filter: /.*/ }, () => {
-                /**
-                 * Attach watch files to first resolve result.
-                 * Presumably there is a much better way of doing
-                 * this?
-                 */
-                if (isFirstRun) {
-                    isFirstRun = false;
-                    return {
-                        watchFiles: matchingPaths
-                    };
-                }
-            });
-
             build.onEnd(() => {
-                isFirstRun = true;
-
-                // Copy any watched files that changed
+                // Copy any source files that changed
                 for (const srcPath of matchingPaths) {
                     const destPath = path.resolve(
                         opts.dest,

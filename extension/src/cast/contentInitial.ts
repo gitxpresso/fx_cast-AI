@@ -4,7 +4,7 @@
  * chrome-extension:// cast script loads.
  */
 
-import { CAST_LOADER_SCRIPT_URL, CAST_SCRIPT_URLS } from "./urls";
+import { CAST_EXTENSION_SENDER_SCRIPT_URLS, CAST_SDK_SCRIPT_URL } from "./urls";
 
 declare global {
     interface Object {
@@ -19,17 +19,12 @@ declare global {
         __onGCastApiAvailable: (isAvailable: boolean) => void;
     }
     interface Navigator {
-        presentation: object;
+        presentation: object | undefined;
     }
 }
 
 window.wrappedJSObject.chrome = cloneInto({}, window);
-
-/**
- * YouTube won't load the cast SDK unless it thinks the presentation API
- * exists.
- */
-if (window.location.host === "www.youtube.com") {
+if (!window.wrappedJSObject.navigator.presentation) {
     window.wrappedJSObject.navigator.presentation = cloneInto({}, window);
 }
 
@@ -48,8 +43,8 @@ Reflect.defineProperty(HTMLScriptElement.prototype.wrappedJSObject, "src", {
     get: srcPropDesc?.get,
 
     set: exportFunction(function (this: HTMLScriptElement, value: string) {
-        if (CAST_SCRIPT_URLS.includes(value)) {
-            return srcPropDesc?.set?.call(this, CAST_LOADER_SCRIPT_URL);
+        if (CAST_EXTENSION_SENDER_SCRIPT_URLS.includes(value)) {
+            return srcPropDesc?.set?.call(this, CAST_SDK_SCRIPT_URL);
         }
 
         return srcPropDesc?.set?.call(this, value);

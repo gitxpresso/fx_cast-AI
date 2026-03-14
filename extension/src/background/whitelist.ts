@@ -4,10 +4,7 @@ import options from "../lib/options";
 import { cacheUaInfo, getChromeUserAgentString } from "../lib/userAgents";
 import { RemoteMatchPattern } from "../lib/matchPattern";
 
-import {
-    CAST_FRAMEWORK_LOADER_SCRIPT_URL,
-    CAST_LOADER_SCRIPT_URL
-} from "../cast/urls";
+import { CAST_SDK_SCRIPT_URL_PATTERNS } from "../cast/urls";
 
 // Missing on @types/firefox-webext-browser
 type OnBeforeSendHeadersDetails = Parameters<
@@ -196,15 +193,6 @@ async function onBeforeCastSDKRequest(details: OnBeforeRequestDetails) {
 
     await browser.scripting.executeScript({
         target: { tabId: details.tabId, frameIds: [details.frameId] },
-        func: (isFramework: boolean) => {
-            (window as any).isFramework = isFramework;
-        },
-        args: [details.url === CAST_FRAMEWORK_LOADER_SCRIPT_URL],
-        injectImmediately: true
-    });
-
-    await browser.scripting.executeScript({
-        target: { tabId: details.tabId, frameIds: [details.frameId] },
         files: ["cast/contentBridge.js"],
         injectImmediately: true
     });
@@ -226,7 +214,7 @@ async function registerSiteWhitelist() {
 
     browser.webRequest.onBeforeRequest.addListener(
         onBeforeCastSDKRequest,
-        { urls: [CAST_LOADER_SCRIPT_URL, CAST_FRAMEWORK_LOADER_SCRIPT_URL] },
+        { urls: CAST_SDK_SCRIPT_URL_PATTERNS },
         ["blocking"]
     );
 

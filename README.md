@@ -1,6 +1,3 @@
-> [!CAUTION]
-> No longer in active development and the next (0.4.x) release is shelved indefinitely due to Mozilla extension review policies and the signing requirement for release builds that make it infeasible to practically continue. The extension will likely no longer be installable in the near future due to these policies. You can still build it from source and sideload it on Firefox ESR, Developer Edition and Nightly. 
-
 <img src="docs/images/preview.png"
      alt="Preview of cast device selection popup"
      align="right"
@@ -218,6 +215,17 @@ These are somewhat outdated now, but show the basic function of the extension:
     -   `extension/src/ui/options/assets/icons8-cancel-120.png`
     -   `extension/src/ui/options/assets/icons8-ok-120.png`
     -   `extension/src/ui/options/assets/icons8-warn-120.png`
+
+## Donations
+
+### PayPal
+
+<p style="float: left">
+    <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3Z2FTMSG976WN&source=url">
+        <img src="https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate with PayPal button" align="middle">
+    </a>
+    <img alt="Donate with PayPal" src="https://i.imgur.com/oisL6Eo.png" align="middle">
+</p>
 
 [^arch]: By default, Arch does not configure Avahi to resolve `.local` hostnames via the name service switch (NSS), and the underlying mdns module used by this project relies on [`getaddrinfo`](https://en.wikipedia.org/wiki/Getaddrinfo) to resolve these hostnames correctly.
 [^cast_app]: Some sites may only function properly when initiating casting from the in-page player buttons.

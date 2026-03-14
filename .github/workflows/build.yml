@@ -1,0 +1,76 @@
+name: Build bridge (Windows, macOS & Linux)
+
+on: workflow_dispatch
+
+jobs:
+    build:
+        runs-on: ${{ matrix.os }}
+
+        strategy:
+            matrix:
+                os: [macos-latest, macos-15-intel, ubuntu-latest, windows-2022]
+                node-version: [16.x]
+
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Setup Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v3
+              with:
+                  node-version: ${{ matrix.node-version }}
+
+            # Old version of node-gyp needs Python with setuptools (easier to just use old Python)
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: "3.11"
+
+            - name: Install Ubuntu dependencies
+              if: ${{ matrix.os == 'ubuntu-latest' }}
+              run: sudo apt install -y libavahi-compat-libdnssd-dev dpkg rpm
+
+            - run: npm ci --prefix ./bridge
+
+            - name: Package (Windows)
+              if: ${{ matrix.os == 'windows-2022' }}
+              run: npm run package:bridge -- -- --arch=x64
+            - uses: actions/upload-artifact@v4
+              if: ${{ matrix.os == 'windows-2022' }}
+              with:
+                  name: fx_cast_bridge-win64
+                  path: dist/bridge/*
+
+            - name: Package (macOS)
+              if: ${{ matrix.os == 'macos-latest' }}
+              run: npm run package:bridge -- -- --arch=arm64
+            - uses: actions/upload-artifact@v4
+              if: ${{ matrix.os == 'macos-latest' }}
+              with:
+                  name: fx_cast_bridge-macos
+                  path: dist/bridge/*
+
+            - name: Package (macOS Intel)
+              if: ${{ matrix.os == 'macos-15-intel' }}
+              run: npm run package:bridge -- -- --arch=x64
+            - uses: actions/upload-artifact@v4
+              if: ${{ matrix.os == 'macos-15-intel' }}
+              with:
+                  name: fx_cast_bridge-macos-intel
+                  path: dist/bridge/*
+
+            - name: Package (Ubuntu, deb)
+              if: ${{ matrix.os == 'ubuntu-latest' }}
+              run: npm run package:bridge -- -- --package-type=deb
+            - uses: actions/upload-artifact@v4
+              if: ${{ matrix.os == 'ubuntu-latest' }}
+              with:
+                  name: fx_cast_bridge-linux-deb
+                  path: dist/bridge/*
+
+            - name: Package (Ubuntu, rpm)
+              if: ${{ matrix.os == 'ubuntu-latest' }}
+              run: npm run package:bridge -- -- --package-type=rpm
+            - uses: actions/upload-artifact@v4
+              if: ${{ matrix.os == 'ubuntu-latest' }}
+              with:
+                  name: fx_cast_bridge-linux-rpm
+                  path: dist/bridge/*
